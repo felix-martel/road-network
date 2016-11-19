@@ -1,1 +1,3 @@
 *.in
+data
+vis/points.js
