@@ -7,40 +7,52 @@ Created on Fri Nov 18 22:54:19 2016
 from time import time
 import webbrowser as web
 
-# le graphe est représenté par une liste d'adjacence
 
+t0 = time()
+
+### CONSTANTES ###
+#
 demo = {
     'man': {
-        'location': 'data/man.in',
+        'set': 'data/man.in',
         'start' : 283479111
         },
     'malta' : {
-        'location': 'data/malta.in',
-        'start': 1
+        'set': 'data/malta.in',
+        'start': 30910604
     },
     'idf': {
-        'location': 'data/idf.in',
-        'start': 2246718192
+        'set': 'data/idf.in',
+        'start': 680443050          # Boulevard de Sébastopol
+    },
+    'maison': {
+        'set': 'data/idf.in',
+        'start': 2638124123         
     }
 }
-dataset = 'man'
+dataset = 'maison'
+default_time = 5*60*1000
+startingPoint = demo[dataset]['start'] # id du sommet de départ
+
+### TRAITEMENT DU JEU DE DONNEES ###
+# <G> liste d'adjacence qui représente le graphe fourni
+# <coordinates> sert uniquement à la visualisation : associe à chaque id ses
+# coordonnées
 G = {}
 coordinates = {}
-file = open(demo[dataset]['location'], 'r', newline='\n')
+file = open(demo[dataset]['set'], 'r', newline='\n')
 for line in file:
     data = line.split(" ")
     if data[0] == 'v':
-        #G[int(data[1])] = []
         G[int(data[1])] = {}
         coordinates[int(data[1])] = [int(data[3])/1000000, int(data[2])/1000000]
     elif data[0] == 'a':
-        # G[int(data[1])].append((int(data[2]), int(data[3][:-1]))) # on rajoute à la liste d'adjacence (vertex_id, edge_weight)
         G[int(data[1])][int(data[2])] = int(data[3][:-1])
 file.close()
+print("Données traitées en", time()-t0, "secondes")
 
-startingPoint = demo[dataset]['start'] # id of the starting vertex
 
-def getIsochrone(D, graph=G, expall=False):
+def getIsochrone(D=default_time, graph=G, expall=False):
     """
     Renvoie l'isochrone D, càd la liste des sommets <s> de <G> tel que le plus court
     chemin entre <startingPoint> et <s> est de longueur <D>.
