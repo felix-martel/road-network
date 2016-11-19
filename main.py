@@ -5,11 +5,28 @@ Created on Fri Nov 18 22:54:19 2016
 @author: felix
 """
 from time import time
+import webbrowser as web
 
 # le graphe est représenté par une liste d'adjacence
+
+demo = {
+    'man': {
+        'location': 'data/man.in',
+        'start' : 283479111
+        },
+    'malta' : {
+        'location': 'data/malta.in',
+        'start': 1
+    },
+    'idf': {
+        'location': 'data/idf.in',
+        'start': 2246718192
+    }
+}
+dataset = 'man'
 G = {}
 coordinates = {}
-file = open('data/idf.in', 'r', newline='\n')
+file = open(demo[dataset]['location'], 'r', newline='\n')
 for line in file:
     data = line.split(" ")
     if data[0] == 'v':
@@ -20,9 +37,8 @@ for line in file:
         # G[int(data[1])].append((int(data[2]), int(data[3][:-1]))) # on rajoute à la liste d'adjacence (vertex_id, edge_weight)
         G[int(data[1])][int(data[2])] = int(data[3][:-1])
 file.close()
-file = open('data/man_adjacency_list', 'w')
 
-startingPoint = 197798 # id of the starting vertex
+startingPoint = demo[dataset]['start'] # id of the starting vertex
 
 def getIsochrone(D, graph=G, expall=False):
     """
@@ -132,4 +148,18 @@ def exportPointList(I):
     print(coordinates[startingPoint])
     return(pointList)
                     
-                        
+def visualize(I):
+    file = open('vis/points.js', 'w')
+    file.write('var plottedPoints = [\n')
+    for vertex in I:
+        file.write(str(coordinates[vertex]))
+        file.write(',\n')
+    file.write('];\n\n')
+    file.write('var centralMarker = \n')
+    file.write(str(coordinates[startingPoint]))
+    file.write('\n;')
+    file.close()
+    web.open('file:///C:/Users/felix/Documents/Dev/Python/INF421PI/vis/vis.html')
+
+
+                    
