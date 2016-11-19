@@ -1,0 +1,135 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 18 22:54:19 2016
+
+@author: felix
+"""
+from time import time
+
+# le graphe est représenté par une liste d'adjacence
+G = {}
+coordinates = {}
+file = open('data/idf.in', 'r', newline='\n')
+for line in file:
+    data = line.split(" ")
+    if data[0] == 'v':
+        #G[int(data[1])] = []
+        G[int(data[1])] = {}
+        coordinates[int(data[1])] = [int(data[3])/1000000, int(data[2])/1000000]
+    elif data[0] == 'a':
+        # G[int(data[1])].append((int(data[2]), int(data[3][:-1]))) # on rajoute à la liste d'adjacence (vertex_id, edge_weight)
+        G[int(data[1])][int(data[2])] = int(data[3][:-1])
+file.close()
+file = open('data/man_adjacency_list', 'w')
+
+startingPoint = 197798 # id of the starting vertex
+
+def getIsochrone(D, graph=G, expall=False):
+    """
+    Renvoie l'isochrone D, càd la liste des sommets <s> de <G> tel que le plus court
+    chemin entre <startingPoint> et <s> est de longueur <D>.
+    En fait pas exactement, cf les notes quelque part.
+    Pour être raccord avec ce qui est fait après, il faudrait faire une copie
+    de G en début d'exécution, mais ça va bouffer de la mémoire.
+    """
+    t0 = time()
+    I = {}
+    J = {}
+    I[startingPoint] = 0
+    d = 0
+    while d < D:
+        for s, delta in I.items():  
+            if delta == 0: # cas où s est un point de l'isochrone d
+                for t, w in G[s].items():
+                    if (t in G) and (t not in I):
+                        J[t] = 0 if w == 1 else w - 1
+                G.pop(s)
+            else: # cas où s est un point d'une isochrone d' > d
+                J[s] = delta - 1
+        I = J.copy()
+        J = {}
+        d += 1
+    print("durée d'exécution :", time() - t0)
+    return(I)
+
+def getIsochroneEnhanced(D, I=dict([(startingPoint, 0)]), graph=G, d=0):
+    """
+    Renvoie l'isochrone D ainsi que l'état du graphe G à la fin de l'exécution
+    et le temps D associé à l'isochrone
+    Permet de partir d'une isochrone donnée, déjà calculée, afin de construire
+    une isochrone de rang supérieur
+    En effet, le calcul de l'isochrone I(D+1) est entièrement déterminé par I(D),
+    G(D) et D.
+    """
+    t0 = time()
+    J = {}
+    while d < D:
+        for s, delta in I.items():  
+            if delta == 0: # cas où s est un point de l'isochrone d
+                for t, w in G[s].items():
+                    if (t in G) and (t not in I):
+                        J[t] = 0 if w == 1 else w - 1
+                G.pop(s)
+            else: # cas où s est un point d'une isochrone d' > d
+                J[s] = delta - 1
+        I = J.copy()
+        J = {}
+        d += 1
+    print("durée d'exécution :", time() - t0)
+    return(I, G, D)
+
+  
+def getIsochrones(Tmin, Tmax, step):
+    """
+    Renvoie les isochrones successives entre <Tmin> et <Tmax> à intervalle <step>
+    """
+    assert Tmin < Tmax
+    I, G, D = getIsochroneEnhanced(Tmin) 
+    isochrones = [I]
+    t = 0
+    while t < Tmax:
+        I, G, D = getIsochroneEnhanced(D + step, I, G, D)
+        isochrones.append(I)
+    return(isochrones)
+        
+        
+    
+def getPseudoIsochrone(D1, D2, graph=G):
+    """
+        Returns all isochrones between D1 and D2 (ie each point such as the
+        quickest path from <startingPoint> has a length between D1 and D2)
+        It returns a hash table <isochrones> such as isochrones[d] contains
+        the d-th isochrone
+    """
+    startingPoint = 2700253082 # id of the starting vertex
+    I = {}
+    J = {}
+    I[startingPoint] = 0
+    d = 0
+    isochrones = {}
+    while d < D2:
+        for s, delta in I.items():  
+            if delta == 0: # cas où s est un point de l'isochrone d
+                for t, w in G[s].items():
+                    if (t in G) and (t not in I):
+                        J[t] = w - 1
+                G.pop(s)
+            else: # cas où s est un point d'une isochrone d' > d
+                J[s] = delta - 1
+        I = J.copy()
+        J = {}
+        d += 1
+        if d >= D1:
+            isochrones[d] = I
+    return(I)
+    
+def exportPointList(I):
+    pointList = []
+    for vertex in I:
+        pointList.append(coordinates[vertex])
+        print(coordinates[vertex], ',')
+    print('\n')
+    print(coordinates[startingPoint])
+    return(pointList)
+                    
+                        

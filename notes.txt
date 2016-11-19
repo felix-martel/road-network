@@ -1,0 +1,29 @@
+calculeIsochrone(D, G)
+var I = {v: 0}
+var J = {}
+var d = 0
+tant que d < D:
+	/* I représente l'isochrone d */
+	/* on va construire dans J l'isochrone d+1 */
+	pour tout sommet s dans I:
+		var delta = I[s] /* c'est le temps qu'il reste à parcourir pour atteindre s, ie s se situe sur l'isochrone d + delta */
+		si delta == 0:	/* alors s appartient à l'isochrone D */
+			pour tout sommet t de G voisin de s qui n'est pas élément de I:
+				ajouter t à J
+				J[t] := (durée entre s et t) - 1
+			retirer s du graphe G
+		sinon:
+			ajouter s à J
+			J[s] := delta - 1
+	I := J
+	d := d + 1
+/* quand on atteint d = D,
+alors on a, pour tout sommet s de I :
+- soit I[s] = 0 :
+alors le temps de trajet entre v et s est exactement D, càd
+s est dans l'isochrone I
+- soit I[s] = t > 0:
+alors il existe un point du graphe à distance t de s qui se trouve sur l'isochrone d,
+et il n'existe aucun sommet du graphe entre ce point et t
+auquel cas s se situe sur l'isochrone d + t
+*/
