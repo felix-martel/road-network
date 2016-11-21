@@ -178,7 +178,12 @@ def visualize(I):
     web.open(path)
 
 
-def run(D=default_time):
+def run(D=default_time, output="viz"):
     I = getIsochrone(D)
-    visualize(I)
+    if output == "viz":
+        visualize(I)
+    elif output == "list":
+        exportPointList(I)
+    else:
+        return(I)
              
