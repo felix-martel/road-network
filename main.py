@@ -5,6 +5,7 @@ Created on Fri Nov 18 22:54:19 2016
 @author: felix
 """
 from time import time
+from os import getcwd
 import webbrowser as web
 
 
@@ -128,6 +129,8 @@ def getPseudoIsochrone(D1, D2, graph=G):
         quickest path from <startingPoint> has a length between D1 and D2)
         It returns a hash table <isochrones> such as isochrones[d] contains
         the d-th isochrone
+        Bah en fait non toujours pas, pour ça il ne faudrait garder que les
+        sommets s vérifiant I[s] = 0
     """
     startingPoint = 2700253082 # id of the starting vertex
     I = {}
@@ -162,6 +165,7 @@ def exportPointList(I):
                     
 def visualize(I):
     file = open('vis/points.js', 'w')
+    path = 'file:///' + getcwd().replace('\\', '/') + '/vis/vis.html'
     file.write('var plottedPoints = [\n')
     for vertex in I:
         file.write(str(coordinates[vertex]))
@@ -171,7 +175,10 @@ def visualize(I):
     file.write(str(coordinates[startingPoint]))
     file.write('\n;')
     file.close()
-    web.open('file:///C:/Users/felix/Documents/Dev/Python/INF421PI/vis/vis.html')
+    web.open(path)
 
 
-                    
+def run(D=default_time):
+    I = getIsochrone(D)
+    visualize(I)
+             
