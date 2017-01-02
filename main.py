@@ -7,6 +7,7 @@ Created on Fri Nov 18 22:54:19 2016
 from time import time
 import os
 import math
+from operator import itemgetter
 
 t0 = time()
 
@@ -62,7 +63,7 @@ def getShortestDistances(quandsarreter):
 	# l'algorithme s'arrête quand la plus courte distance de startingPoint au sommet courant est plus grande que quandsarreter
 	# en effet, cette distance augmente toujours au cours de l'éxecution de l'algorithme
 	pluscourtedistance = dict([(s, math.inf if s!=startingPoint else 0) for s in G])
-	sommetsavisiter = sorted([s for s in G], key = lambda s : pluscourtedistance[s])
+	sommetsavisiter = heapq.heapify([s for s in G], key = lambda s : pluscourtedistance[s])
 
 	while(sommetsavisiter and pluscourtedistance[sommetsavisiter[0]] < quandsarreter):
 
@@ -74,6 +75,62 @@ def getShortestDistances(quandsarreter):
 		
 		print("Pourcentage d'accomplissement :", "{:10.2f}".format(pluscourtedistance[sommetsavisiter[0]] / quandsarreter * 100))
 	return(pluscourtedistance)
+	
+
+def getIsochronePab(D):
+	data = {startingPoint: 0}
+	result = []
+	
+	while data:
+		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
+		
+		
+		
+		print("{:10.2f}".format(distanceSommet / D * 100)) # indicateur d'avancement
+		
+		if distanceSommet >= D:
+			result.append(sommet)
+		else:
+			for voisin, dvoisin in G[sommet].items():
+				if voisin in G:
+					if voisin in data :
+						data[voisin] = min(distanceSommet + dvoisin, data[voisin])
+					else:
+						data[voisin] = distanceSommet + dvoisin
+		del data[sommet] # ne pas conserver 
+		del G[sommet] # pour ne pas revenir en arrière
+	print(result)
+	return result
+			
+def getIsochronePab2(D):
+	data = {startingPoint: 0}
+	result = []
+	
+	while data:
+		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
+		
+		
+		
+		print("{:10.2f}".format(distanceSommet / D * 100)) # indicateur d'avancement
+		
+		
+		
+		
+		for voisin, dvoisin in G[sommet].items():
+			if voisin in G:
+				if voisin in data :
+					data[voisin] = min(distanceSommet + dvoisin, data[voisin])
+				else:
+					data[voisin] = distanceSommet + dvoisin
+		if distanceSommet >= D:
+			result.append(sommet)
+		else:
+			del data[sommet] # ne pas conserver 
+			
+		del G[sommet] # pour ne pas revenir en arrière
+	print(result)
+	return result
+			
 	
 def vizIsochroneDjikstra(exact_time = default_time):
 	delta_time = 1000 # intervalle de temps autorisé quand on dit "exactement", ici 1 seconde
@@ -112,4 +169,4 @@ def run(D=default_time, output="viz"):
     else:
         return(I)
 
-vizIsochroneDjikstra()
+visualize(getIsochronePab2(default_time))
