@@ -1,0 +1,62 @@
+Algorithme getIsochrone
+# Input :
+G : liste d'adjacence représentant G. // G[vertex] = [neighbor_1, neighbor_2, ...]
+startingVertex : sommet de départ
+d1 : distance de l'isochrone
+d2 : distance minimale de la destination
+
+# Output :
+result : liste des sommets situés à d1 du point de départ sur un chemin allant à >= d2
+
+# Constantes :
+SELECTED : désigne les sommets en cours de traitement
+VISITED : désigne les sommets déjà visités 
+
+# Variables :
+data = {}
+visitedVertices = {}
+previousVertex = {}
+distance = {}
+result = []
+
+# Instructions
+data := {startingVertex : 0}
+visitedVertices = {startingVertex : SELECTED}
+currentVertex, currentDistance = startingVertex, 0
+
+TANT QUE currentDistance < d2 FAIRE :
+	POUR tous les voisins currentNeighbor de currentVertex tels que visitedVertices[currentNeighbor] != VISITED, FAIRE :
+		distanceNeighbor = distance(currentVertex, n)
+		SI currentNeighbor est dans data :
+			SI currentDistance + distanceNeighbor < data[currentNeighbor]:
+				data[currentNeighbor] = currentDistance + distanceNeighbor
+				distance[currentNeighbor] = currentDistance + distanceNeighbor
+				previousVertex[currentNeighbor] = currentVertex
+			SINON
+				pas la peine d'actualiser data
+		SINON :
+			-- on ajoute currentNeighbor à data :
+			data[currentNeighbor] = currentDistance + distanceNeighbor
+			distance[currentNeighbor] = currentDistance + distanceNeighbor
+			previousVertex[currentNeighbor] = currentVertex
+			visitedVertices[currentNeighbor] = SELECTED
+	FIN POUR TOUT
+		
+	SI currentDistance < d2:
+		supprimer currentVertex de data
+		visitedVertices[currentVertex] = VISITED
+	
+	currentVertex, currentDistance = plus proche point de data
+FIN TANT QUE
+
+POUR TOUT vertex, distance DANS data FAIRE :
+	TANT QUE distance > d1:
+		vertex = previousVertex[vertex]
+		distance = distance - distance[vertex]
+	FIN TANT QUE
+	ajouter vertex à result
+FIN POUR TOUT
+
+renvoyer result
+		
+	

@@ -8,6 +8,8 @@ from time import time
 import os
 import math
 from operator import itemgetter
+import heapq
+
 
 t0 = time()
 
@@ -31,7 +33,7 @@ demo = {
         'start': 2638124123         
     }
 }
-dataset = 'idf'
+dataset = 'man'
 default_time = 5*60*1000
 startingPoint = demo[dataset]['start'] # id du sommet de départ
 
@@ -80,6 +82,32 @@ def getShortestDistances(quandsarreter):
 def getIsochronePab(D):
 	data = {startingPoint: 0}
 	result = []
+     
+	while data:
+		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
+		
+		
+		
+		print("{:10.2f}".format(distanceSommet / D * 100)) # indicateur d'avancement
+		
+		if distanceSommet >= D: 
+			result.append(sommet)
+		else:
+			for voisin, dvoisin in G[sommet].items():
+				if voisin in G:
+					if voisin in data :
+						data[voisin] = min(distanceSommet + dvoisin, data[voisin])
+					else:
+						data[voisin] = distanceSommet + dvoisin
+		del data[sommet] # ne pas conserver 
+		del G[sommet] # pour ne pas revenir en arrière
+	print(result)
+	return result
+			
+
+def getIsochronePab(D):
+	data = {startingPoint: 0}
+	result = []
 	
 	while data:
 		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
@@ -100,36 +128,51 @@ def getIsochronePab(D):
 		del data[sommet] # ne pas conserver 
 		del G[sommet] # pour ne pas revenir en arrière
 	print(result)
-	return result
-			
-def getIsochronePab2(D):
-	data = {startingPoint: 0}
-	result = []
-	
-	while data:
-		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
-		
-		
-		
-		print("{:10.2f}".format(distanceSommet / D * 100)) # indicateur d'avancement
-		
-		
-		
-		
-		for voisin, dvoisin in G[sommet].items():
-			if voisin in G:
-				if voisin in data :
-					data[voisin] = min(distanceSommet + dvoisin, data[voisin])
-				else:
-					data[voisin] = distanceSommet + dvoisin
-		if distanceSommet >= D:
-			result.append(sommet)
-		else:
-			del data[sommet] # ne pas conserver 
-			
-		del G[sommet] # pour ne pas revenir en arrière
-	print(result)
-	return result
+	return result   
+
+def getClosestElement(data):
+    return min(data.items(), key = itemgetter(1))
+    
+def getPseudoisochrone(d1, d2):
+      d1 = 60000 * d1
+      d2 = 60000 * d2
+      # Constantes
+      SELECTED = False
+      VISITED = True
+      
+      # Initialisation
+      distance = {}
+      previousVertex = {}
+      result = []
+      
+      data = {startingPoint: 0}
+      visitedVertices = {startingPoint: SELECTED}
+      currentVertex, currentDistance = getClosestElement(data)
+      
+      while currentDistance < d2:
+          for currentNeighbor, distanceNeighbor in G[currentVertex].items():
+              if (currentNeighbor not in visitedVertices) or (not visitedVertices[currentNeighbor]):
+                  if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < data[currentNeighbor])):
+                      data[currentNeighbor] = currentDistance + distanceNeighbor
+                      distance[currentNeighbor] = currentDistance + distanceNeighbor
+                      previousVertex[currentNeighbor] = currentVertex
+          #fin pour tout
+          
+          if currentDistance < d2:
+              del data[currentVertex]
+              visitedVertices[currentVertex] = VISITED
+          currentVertex, currentDistance = getClosestElement(data)
+      
+      DEV_data = data.copy()
+      # Fin de l'étape 1
+      
+      for vertex, reverseDistance in data.items():
+          currentDistance = 0
+          while currentDistance < reverseDistance - d1:
+              vertex = previousVertex[vertex]
+              currentDistance += distance[vertex]
+          result.append(vertex)
+      return result, DEV_data
 			
 	
 def vizIsochroneDjikstra(exact_time = default_time):
@@ -159,7 +202,29 @@ def visualize(I):
 	file.close()
 	os.system('firefox vis/vis.html')
 
-
+def visualizeMany(L):
+    I = L[0]
+    file = open('vis/points.js', 'w')
+    file.write('var plottedPoints = [\n')
+    for vertex in I:
+        file.write(str(coordinates[vertex]))
+        file.write(',\n')
+    file.write('];\n\n')
+    file.write('var centralMarker = \n')
+    file.write(str(coordinates[startingPoint]))
+    file.write('\n;\n')
+    
+    file.write('var pointList = [\n')
+    for I in L[1:]:
+        file.write('[\n')
+        for vertex in I:
+            file.write(str(coordinates[vertex]))
+            file.write(',\n')
+        file.write('],\n')
+    file.write('\n];')    
+    file.close()
+    # os.system('firefox vis/vis.html')
+    
 def run(D=default_time, output="viz"):
     I = getIsochrone(D)
     if output == "viz":
@@ -169,4 +234,4 @@ def run(D=default_time, output="viz"):
     else:
         return(I)
 
-visualize(getIsochronePab2(default_time))
+#visualize(getIsochronePab2(default_time))
