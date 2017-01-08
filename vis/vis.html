@@ -46,12 +46,21 @@ If you are not seeing an OpenStreetMap in the background, this may be because th
 	// Create layergroup with points and central marker on separate layers
 	
 	var layers = L.layerGroup();
-
+	/*
 	for (var i = 0; i < plottedPoints.length; i++)
 		layers.addLayer(new L.circle(plottedPoints[i],
 			5, {color: 'red', fillOpacity: 0.5}) // Optional styles
 		);
+	*/
+	var colors = ['red', 'blue', 'green', 'yellow', 'black'];
 	
+	for (var j=0; j<pointList.length; j++){
+		for (var i = 0; i < pointList[j].length; i++)
+			layers.addLayer(new L.circle(pointList[j][i],
+				5, {color: colors[j%5], fillOpacity: 0.5}) // Optional styles
+			);		
+	}
+
 
 	layers.addLayer (new L.marker (centralMarker));
 	
