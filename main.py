@@ -430,7 +430,7 @@ def itereResultB(t1, t2):
         getResultB(t1, t2, loc)
         resetData()
 
-def itereResultB(t1, t2):
+def itereResult(t1, t2):
     for loc in ['paris', 'countryside', 'home']:
         getResultA(t1, loc)
         resetDat()
