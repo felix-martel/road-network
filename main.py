@@ -10,9 +10,9 @@ from operator import itemgetter
 import webbrowser as web
 import matplotlib.pyplot as plt
 
-t0 = time()
 
-### CONSTANTES ###
+
+### CONSTANTS ###
 
 demo = {
     'man': {
@@ -40,40 +40,23 @@ demo = {
         'start': 1117958031
     },
     'home': {
-        'set': 'data/france.in', # Chez moi
+        'set': 'data/france.in', # This is my home
         'start': 17975480
     }
 }
 
-#122888 = Préalpes près de Lyon
-# 1105095560 = au dessus de Troyes
-#1105247913 = entre lyon et chalons
-#1118026898 les mées
-# 1117958031 = Campagne
-#122935
-#361061
-
 dataset = 'paris'
 default_time = 5
-startingPoint = demo[dataset]['start'] # id du sommet de départ
+startingPoint = demo[dataset]['start'] # id of the starting point
 G = {}
 coordinates = {}
 distance = {}
 previousVertex = {}
-### TRAITEMENT DU JEU DE DONNEES ###
-# <G> liste d'adjacence qui représente le graphe fourni
-# <coordinates> sert uniquement à la visualisation : associe à chaque id ses
-# coordonnées
 
-def findPoint(point):
-    file = open('vis/points.js', 'w')
-    file.write('var plottedPoints = [' + str(coordinates[point]) + '];\n')
-    file.write('var centralMarker = \n')
-    file.write(str(coordinates[point]))
-    file.write('\n;\n')
-    file.write('var pointList = [[]];')    
-    file.close()
-    see()
+### PROCESSING DATA ###
+# <G> adjacency list for the provided graph
+# <coordinates> used for computing the barycenters, and for visualization purpose
+
     
 def resetData():
     distance.clear()
@@ -81,6 +64,10 @@ def resetData():
 
 
 def processData(location=dataset):
+    """
+        Turn the given .in file into a hashtable G, more suitable for our algorithms
+        <location> should be a key of the <demo> dictionary
+    """
     global dataset
     global startingPoint
     t0 = time()
@@ -107,14 +94,19 @@ def processData(location=dataset):
     print("Données traitées en", time()-t0, "secondes")
          
 def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
-      # Conversions minutes -> millisecondes
+    """
+        Returns the dth isochrone
+        output='xy' enables the barycenter mode
+        seeBarycenters=True also returns the list of the two points involved in the barycenter, for each barycenter
+    """
+      # Conversion minutes -> milliseconds
       d = getTime(d)
       
-      # Constantes
+      # Constants
       SELECTED = False
       VISITED = True
       
-      # Initialisation
+      # Initialization
       
       result = []
       resultXY = []
@@ -159,15 +151,26 @@ def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
           
 
 def getTime(t):
+    """
+        Convert minutes to milliseconds
+    """
     return t * 60 *1000
     
 def getClosestElement(data):
+    """
+        Returns the (key, value) pair with minimal value, for a given <data> dictionary
+    """
     return min(data.items(), key = itemgetter(1))
  
 
     
 def getPseudoisochrone(d1=default_time, d2=2*default_time, output='xy', debug=False, seeBarycenters=False):
-      # Conversions minutes -> millisecondes
+    """
+        Returns the list of the points located at exactly t1 when the destination is more than t2 away (inner ring), and
+        the t2-th isochrone (outer ring).
+        debug=True also returns the path between outer and inner ring
+    """
+      # Conversions minutes -> milliseconds
       d1 = getTime(d1)
       d2 = getTime(d2)
       # Constantes
@@ -275,6 +278,9 @@ def visualizeMany(L, modeXY=True, filename='points'):
     # os.system('firefox vis/vis.html')
 
 def viz(L, modeXY=True):
+    """
+        Shortcut for visualizeMany
+    """
     visualizeMany(L, modeXY)
 
 
