@@ -6,16 +6,14 @@ Created on Fri Nov 18 22:54:19 2016
 """
 from time import time
 import os
-import math
 from operator import itemgetter
-import heapq
 import webbrowser as web
 import matplotlib.pyplot as plt
 
 t0 = time()
 
 ### CONSTANTES ###
-#
+
 demo = {
     'man': {
         'set': 'data/man.in',
@@ -29,16 +27,33 @@ demo = {
         'set': 'data/idf.in',
         'start': 680443050          # Boulevard de Sébastopol
     },
-    'fr': {
+    'paris': {
         'set': 'data/france.in',
-        'start': 122935          # Boulevard de Sébastopol
+        'start': 361061          # Quai de Seine
     },
-    'maison': {
+    'home_idf': {
         'set': 'data/idf.in',
         'start': 2638124123         
+    },
+    'countryside': {            # Campagne
+        'set': 'data/france.in',
+        'start': 1117958031
+    },
+    'home': {
+        'set': 'data/france.in', # Chez moi
+        'start': 17975480
     }
 }
-dataset = 'fr'
+
+#122888 = Préalpes près de Lyon
+# 1105095560 = au dessus de Troyes
+#1105247913 = entre lyon et chalons
+#1118026898 les mées
+# 1117958031 = Campagne
+#122935
+#361061
+
+dataset = 'paris'
 default_time = 5
 startingPoint = demo[dataset]['start'] # id du sommet de départ
 G = {}
@@ -50,6 +65,16 @@ previousVertex = {}
 # <coordinates> sert uniquement à la visualisation : associe à chaque id ses
 # coordonnées
 
+def findPoint(point):
+    file = open('vis/points.js', 'w')
+    file.write('var plottedPoints = [' + str(coordinates[point]) + '];\n')
+    file.write('var centralMarker = \n')
+    file.write(str(coordinates[point]))
+    file.write('\n;\n')
+    file.write('var pointList = [[]];')    
+    file.close()
+    see()
+    
 def resetData():
     distance.clear()
     previousVertex.clear()
@@ -80,37 +105,6 @@ def processData(location=dataset):
         #~ compteur += 1
     file.close()
     print("Données traitées en", time()-t0, "secondes")
-
-
-def getIsochrone2(D, output='xy'):
-	data = {startingPoint: 0}
-	result = []
-	resultXY = []
-	D = getTime(D)
-     
-	while data:
-		sommet, distanceSommet = min(data.items(), key = itemgetter(1))
-		
-		
-		
-		#print("{:10.2f}".format(distanceSommet / D * 100)) # indicateur d'avancement
-		
-		if distanceSommet >= D: 
-			result.append(sommet)
-		else:
-			for voisin, dvoisin in G[sommet].items():
-				if voisin in G:
-					if voisin in data :
-						data[voisin] = min(distanceSommet + dvoisin, data[voisin])
-					else:
-						data[voisin] = distanceSommet + dvoisin
-		del data[sommet] # ne pas conserver 
-		del G[sommet] # pour ne pas revenir en arrière
-	if output == 'xy':
-         resultXY = [coordinates[v] for v in result]
-         return resultXY
-	else:
-         return result
          
 def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
       # Conversions minutes -> millisecondes
@@ -216,8 +210,9 @@ def getPseudoisochrone(d1=default_time, d2=2*default_time, output='xy', debug=Fa
                   u1 = distanceFromStart - d1
                   u2 = d1 - distance[previousVertex[vertex]]
                   t = u1 / (u1 + u2)
-                  #print(t)
-                  resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
+                  newPoint = (t*x1+(1-t)*x2, t*y1+(1-t)*y2)
+                  if newPoint not in resultXY:
+                      resultXY.append(newPoint)
                   if seeBarycenters:
                       baryXY.append((x1, y1))
                       baryXY.append((x2, y2))
@@ -240,16 +235,6 @@ def getPseudoisochrone(d1=default_time, d2=2*default_time, output='xy', debug=Fa
               return [resultXY, isoXY]
       else:
           return [result, iso]
-
-    
-def exportPointList(I):
-    pointList = []
-    for vertex in I:
-        pointList.append(coordinates[vertex])
-        print(coordinates[vertex], ',')
-    print('\n')
-    print(coordinates[startingPoint])
-    return(pointList)
 
 
 def visualizeMany(L, modeXY=True, filename='points'):
@@ -291,19 +276,7 @@ def visualizeMany(L, modeXY=True, filename='points'):
 
 def viz(L, modeXY=True):
     visualizeMany(L, modeXY)
-    
-def compareIsochroneAndPseudoisochrone():
-    processData()
-    t1, t2 = 5, 10
-    I, J = getPseudoisochrone(t1, t2)
-    processData()
-    K = getIsochrone(t1)
-    processData()
-    L = getIsochrone(t2)
-    isochrones = [I, J, K, L]
-    visualizeMany(isochrones)
-    see()
-    return isochrones
+
 
 def testA(d1=default_time, loc=dataset, debugMode=False):
     t0 = time()
@@ -319,6 +292,7 @@ def testA(d1=default_time, loc=dataset, debugMode=False):
     see()
 
 def testB(d1=default_time, d2=2*default_time, loc=dataset, debugMode=False):
+    t0 = time()
     print(" --- Testing function : getPseudoisochrone  with parameters : ")
     print("Dataset : ", loc)
     print("Destination time : ", d2)
@@ -326,6 +300,8 @@ def testB(d1=default_time, d2=2*default_time, loc=dataset, debugMode=False):
     if loc != dataset:
         processData(loc)
     l = getPseudoisochrone(d1, d2, debug=debugMode)
+    print("\nResult : ", len(l[0]))
+    print("Runtime : ", time() - t0)
     viz(l)
     see()
 
@@ -336,13 +312,6 @@ def see():
     else:
         os.system('firefox vis/vis.html') #Pour Firefox/Linux
 
-#processData()
-
-def default(function):
-    a = function()
-    viz(a)
-    see()
-    
 
 def isochrones(d, returnIsos=False):
     t0 = time()
@@ -354,17 +323,20 @@ def isochrones(d, returnIsos=False):
     else:
         return d, len(a[0]), t
 
-def pseudoisochrones(t1, t2):
+def pseudoisochrones(t1, t2, returnIsos=False):
     t0 = time()
     a = getPseudoisochrone(t1, t2)
     visualizeMany(a, filename='point_'+str(t2))
     rt = time() - t0
-    return len(a[0]), rt
+    if returnIsos:
+        return len(a[0]), rt, a
+    else:
+        return len(a[0]), rt
 
 def itereTestA(saveIsos=False):
     X, Y, runtimes = [], [], []
     print(" --- Running getIsochrone for different values of t1 --- ")
-    distances = [1, 2, 3, 5, 8, 10, 15, 18, 20, 25, 30, 40, 50, 60, 2*60, 3*60, 4*60, 5*60, 6*60, 7*60, 8*60]
+    distances = [1, 2, 3, 5, 8, 10, 15, 18, 20, 25, 30, 40, 50] + [k*60 for k in range(1, 9)]
     t0 = time()
     if saveIsos:
         isos = []
@@ -389,25 +361,82 @@ def itereTestA(saveIsos=False):
         return X, Y, runtimes, isos
     return X, Y, runtimes
 
-def itereTestB():
+def itereTestB(saveIsos=False):
     X, Y, runtimes = [], [], []
     ratios = [1.1, 1.5, 2, 3, 4]
     t1 = 60
     print(" --- Running getPseudoisochrone for different values of t2/t1 --- ")
     t0 = time()
+    if saveIsos:
+        isos = []
     for ratio in ratios:
         t2 = ratio * t1
         print("--\nt1 = ", t1)
         print("t2 = ", t2)
         print("ratio = ", ratio)
-        y, r = pseudoisochrones(t1, t2)
+        if saveIsos:
+            y, r, iso = pseudoisochrones(t1, t2, saveIsos)
+            isos.append(iso)
+        else:
+            y, r = pseudoisochrones(t1, t2)
         print("result = ", y)
         print("runtime = ", r)
-        X.append(x)
+        X.append(t2)
         Y.append(y)
         runtimes.append(r)
         resetData()
     print("\n\nTotal runtime : ", time()-t0)
     plt.plot(X, Y)
+    if saveIsos:
+        visualizeMany(isos)
+        see()
+        return X, Y, runtimes, isos
     return X, Y, runtimes
         
+def getResultA(t1, location='paris'):
+    global startingPoint
+    startingPoint = demo[location]['start']
+    t0 = time()
+    print("\nStarting point : ", location)
+    print("Duration : ", t1)
+    l = getIsochrone(t1)
+    print(" ||| Result : ", len(l[0]), " ||| ")
+    print("Runtime : ", time() - t0)
+    viz(l)
+    see()
+    return len(l[0])
+
+def getResultB(t1, t2, location='paris'):
+    global startingPoint
+    startingPoint = demo[location]['start']
+    t0 = time()
+    print("\nStarting point : ", location)
+    print("t1 : ", t1)
+    print("t2 : ", t2)
+    a = getPseudoisochrone(t1, t2)
+    print(" ||| Result : ", len(a[0]), " ||| ")
+    print("Runtime : ", time() - t0)
+    visualizeMany(a)
+    see()
+    return len(a[0])
+
+def itereResultA(t1):
+    for loc in ['paris', 'countryside', 'home']:
+        getResultA(t1, loc)
+        resetData()
+
+def itereResultB(t1, t2):
+    for loc in ['paris', 'countryside', 'home']:
+        getResultB(t1, t2, loc)
+        resetData()
+
+def itereResultB(t1, t2):
+    for loc in ['paris', 'countryside', 'home']:
+        getResultA(t1, loc)
+        resetDat()
+        getResultA(t2, loc)
+        resetData()
+        getResultB(t1, t2, loc)
+        resetData()
+    
+    
