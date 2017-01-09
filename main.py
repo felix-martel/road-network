@@ -49,6 +49,11 @@ previousVertex = {}
 # <coordinates> sert uniquement à la visualisation : associe à chaque id ses
 # coordonnées
 
+def resetData():
+    distance.clear()
+    previousVertex.clear()
+
+
 def processData(location=dataset):
     global dataset
     global startingPoint
@@ -58,6 +63,8 @@ def processData(location=dataset):
     print('Traitement des données... \n')
     G.clear()
     coordinates.clear()
+    distance.clear()
+    previousVertex.clear()
     file = open(demo[dataset]['set'], 'r', newline='\n')
     #~ compteur = 1
     #~ nombrelignes = sum(1 for _ in file)
@@ -298,12 +305,15 @@ def compareIsochroneAndPseudoisochrone():
     return isochrones
 
 def testA(d1=default_time, loc=dataset, debugMode=False):
+    t0 = time()
     print(" --- Testing function : getIsochrone  with parameters : ")
     print("Dataset : ", loc)
     print("Duration : ", d1)
     if loc != dataset:
         processData(loc)
     l = getIsochrone(d1)
+    print("\nResult : ", len(l[0]))
+    print("\nRuntime : ", time() - t0)
     viz(l)
     see()
 
