@@ -38,7 +38,8 @@ default_time = 5
 startingPoint = demo[dataset]['start'] # id du sommet de départ
 G = {}
 coordinates = {}
-
+distance = {}
+previousVertex = {}
 ### TRAITEMENT DU JEU DE DONNEES ###
 # <G> liste d'adjacence qui représente le graphe fourni
 # <coordinates> sert uniquement à la visualisation : associe à chaque id ses
@@ -69,30 +70,10 @@ def processData(location=dataset):
     print("Données traitées en", time()-t0, "secondes")
 
 
-def getShortestDistances(quandsarreter):
-	# ni plus ni moins qu'un algo de Djikstra
-	# retourne le dictionnaire contenant pour clés les sommets de G et pour valeurs leur (plus courte) distance à SP
-	# l'algorithme s'arrête quand la plus courte distance de startingPoint au sommet courant est plus grande que quandsarreter
-	# en effet, cette distance augmente toujours au cours de l'éxecution de l'algorithme
-	quandsarreter = getTime(quandsarreter)
-	pluscourtedistance = dict([(s, math.inf if s!=startingPoint else 0) for s in G])
-	sommetsavisiter = heapq.heapify([s for s in G], key = lambda s : pluscourtedistance[s])
-
-	while(sommetsavisiter and pluscourtedistance[sommetsavisiter[0]] < quandsarreter):
-
-		sommetcourant = sommetsavisiter.pop(0)
-		for sommetvoisin, distance in G[sommetcourant].items():
-			if pluscourtedistance[sommetvoisin] > pluscourtedistance[sommetcourant] + G[sommetcourant][sommetvoisin]:
-				pluscourtedistance[sommetvoisin] = pluscourtedistance[sommetcourant] + G[sommetcourant][sommetvoisin]
-		sommetsavisiter = sorted([s for s in sommetsavisiter], key = lambda s : pluscourtedistance[s])
-		
-		print("Pourcentage d'accomplissement :", "{:10.2f}".format(pluscourtedistance[sommetsavisiter[0]] / quandsarreter * 100))
-	return(pluscourtedistance)
-	
-
-def getIsochronePab(D):
+def getIsochrone2(D, output='xy'):
 	data = {startingPoint: 0}
 	result = []
+	resultXY = []
 	D = getTime(D)
      
 	while data:
@@ -113,9 +94,64 @@ def getIsochronePab(D):
 						data[voisin] = distanceSommet + dvoisin
 		del data[sommet] # ne pas conserver 
 		del G[sommet] # pour ne pas revenir en arrière
-	print(" ---------------------------- ISOCHRONE ", D , " milliseconds ")
-	print(result)
-	return result
+	if output == 'xy':
+         resultXY = [coordinates[v] for v in result]
+         return resultXY
+	else:
+         return result
+         
+def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
+      # Conversions minutes -> millisecondes
+      d = getTime(d)
+      
+      # Constantes
+      SELECTED = False
+      VISITED = True
+      
+      # Initialisation
+      
+      result = []
+      resultXY = []
+      if seeBarycenters:
+          baryXY = []
+
+      iso = {startingPoint: 0}
+      visitedVertices = {startingPoint: SELECTED}
+      currentVertex, currentDistance = getClosestElement(iso)
+      
+      while iso:
+              
+          for currentNeighbor, distanceNeighbor in G[currentVertex].items():
+              if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < iso[currentNeighbor])):
+                  iso[currentNeighbor] = currentDistance + distanceNeighbor
+                  visitedVertices[currentNeighbor] = SELECTED
+                  distance[currentNeighbor] = currentDistance + distanceNeighbor
+                  previousVertex[currentNeighbor] = currentVertex
+          
+          del iso[currentVertex]
+          visitedVertices[currentVertex] = VISITED
+          if currentDistance > d:
+              x1, y1 = coordinates[previousVertex[currentVertex]]
+              x2, y2 = coordinates[currentVertex]
+              u1 = d - distance[previousVertex[currentVertex]]
+              u2 = currentDistance - d
+              t = u1 / (u1 + u2)
+              print(t)
+              resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
+              if seeBarycenters:
+                  baryXY.append((x1, y1))
+                  baryXY.append((x2, y2))
+          
+          if iso:
+              currentVertex, currentDistance = getClosestElement(iso)
+      
+      if seeBarycenters:
+          return [resultXY, seeBarycenters]
+      else:
+          return [resultXY]
+      
+
+          
 
 def getTime(t):
     return t * 60 *1000
@@ -123,10 +159,10 @@ def getTime(t):
 def getClosestElement(data):
     return min(data.items(), key = itemgetter(1))
  
-distance = {}
-previousVertex = {}
+
     
-def getPseudoisochrone(d1=default_time, d2=2*default_time, debug=False):
+def getPseudoisochrone(d1=default_time, d2=2*default_time, output='xy', debug=False, seeBarycenters=False):
+      # Conversions minutes -> millisecondes
       d1 = getTime(d1)
       d2 = getTime(d2)
       # Constantes
@@ -136,57 +172,64 @@ def getPseudoisochrone(d1=default_time, d2=2*default_time, debug=False):
       # Initialisation
       
       result = []
-      
+      resultXY = []
       test = []
       
-      data = {startingPoint: 0}
+      iso = {startingPoint: 0}
       visitedVertices = {startingPoint: SELECTED}
-      currentVertex, currentDistance = getClosestElement(data)
+      currentVertex, currentDistance = getClosestElement(iso)
       
       while currentDistance < d2:
           for currentNeighbor, distanceNeighbor in G[currentVertex].items():
-              if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < data[currentNeighbor])):
-                  data[currentNeighbor] = currentDistance + distanceNeighbor
+              if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < iso[currentNeighbor])):
+                  iso[currentNeighbor] = currentDistance + distanceNeighbor
                   visitedVertices[currentNeighbor] = SELECTED
                   distance[currentNeighbor] = currentDistance + distanceNeighbor
                   previousVertex[currentNeighbor] = currentVertex
-#                  if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < data[currentNeighbor])):
-#                      data[currentNeighbor] = currentDistance + distanceNeighbor
-#                      distance[currentNeighbor] = currentDistance + distanceNeighbor
-#                      previousVertex[currentNeighbor] = currentVertex
-          #fin pour tout
           
-          del data[currentVertex]
+          del iso[currentVertex]
           visitedVertices[currentVertex] = VISITED
           test.append(currentVertex)
-          currentVertex, currentDistance = getClosestElement(data)
-      #print(" --------------- PSEUDO ISOCHRONES ", d2 ," milliseconds -----")
-      #print(data)
-      # Fin de l'étape 1
-      
+          currentVertex, currentDistance = getClosestElement(iso)
+      # -- End of step 1
+          
+      if seeBarycenters:
+          baryXY = []
       paths = []
-      for vertex, distanceFromStart in data.items():
-          #print("Distance from start : ", distanceFromStart/60000)
+      for vertex, distanceFromStart in iso.items():
           path = []
           while distanceFromStart > d1:
+              if (output == 'xy') and (distance[previousVertex[vertex]] <= d1):
+                  x1, y1 = coordinates[vertex]
+                  x2, y2 = coordinates[previousVertex[vertex]]
+                  u1 = distanceFromStart - d1
+                  u2 = d1 - distance[previousVertex[vertex]]
+                  t = u1 / (u1 + u2)
+                  print(t)
+                  resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
+                  if seeBarycenters:
+                      baryXY.append((x1, y1))
+                      baryXY.append((x2, y2))
               vertex = previousVertex[vertex]
               distanceFromStart = distance[vertex]
-              path.append(vertex)
+              if debug:
+                  path.append(vertex)
           result.append(vertex)
           if debug:
               paths.append(path)
-          #print("Distance parcourue : ", currentDistance/60000)
+      # -- End of step 2
+              
       if debug:
           return paths
-      return [result, data]
+      if output == 'xy':
+          isoXY = [coordinates[v] for v in iso]
+          if seeBarycenters:
+              return [resultXY, isoXY, baryXY]
+          else:
+              return [resultXY, isoXY]
+      else:
+          return [result, iso]
 
-			
-	
-def vizIsochroneDjikstra(exact_time = default_time):
-	delta_time = 1000 # intervalle de temps autorisé quand on dit "exactement", ici 1 seconde
-	exact_time = getTime(exact_time) 
-	I = getShortestDistances(quandsarreter = exact_time + delta_time + 1)
-	visualize([ s for s in I if I[s] > exact_time - delta_time and I[s] < exact_time + delta_time])
     
 def exportPointList(I):
     pointList = []
@@ -196,21 +239,9 @@ def exportPointList(I):
     print('\n')
     print(coordinates[startingPoint])
     return(pointList)
-                    
-def visualize(I):
-	file = open('vis/points.js', 'w')
-	file.write('var plottedPoints = [\n')
-	for vertex in I:
-		file.write(str(coordinates[vertex]))
-		file.write(',\n')
-	file.write('];\n\n')
-	file.write('var centralMarker = \n')
-	file.write(str(coordinates[startingPoint]))
-	file.write('\n;')
-	file.close()
-	os.system('firefox vis/vis.html')
 
-def visualizeMany(L):
+
+def visualizeMany(L, modeXY=True):
     """
         Each element L[i] of L is a list of vertices 
         Make sure your vis/vis.html file is up-to-date
@@ -218,9 +249,14 @@ def visualizeMany(L):
     I = L[0]
     file = open('vis/points.js', 'w')
     file.write('var plottedPoints = [\n')
-    for vertex in I:
-        file.write(str(coordinates[vertex]))
-        file.write(',\n')
+    if modeXY:
+        for xy in I:
+            file.write("["+"{:6f}".format(xy[0])+", "+"{:6f}".format(xy[1])+"]")
+            file.write(',\n')
+    else:
+        for vertex in I:
+            file.write(str(coordinates[vertex]))
+            file.write(',\n')
     file.write('];\n\n')
     file.write('var centralMarker = \n')
     file.write(str(coordinates[startingPoint]))
@@ -229,43 +265,43 @@ def visualizeMany(L):
     file.write('var pointList = [\n')
     for I in L:
         file.write('[\n')
-        for vertex in I:
-            file.write(str(coordinates[vertex]))
-            file.write(',\n')
+        if modeXY:
+            for xy in I:
+                file.write("["+"{:6f}".format(xy[0])+", "+"{:6f}".format(xy[1])+"]")
+                file.write(',\n')
+        else:
+            for vertex in I:
+                file.write(str(coordinates[vertex]))
+                file.write(',\n')
         file.write('],\n')
     file.write('\n];')    
     file.close()
     # os.system('firefox vis/vis.html')
 
-def viz(L):
-    try: # L est une liste de liste
-        origin = L[0][0]
-        visualizeMany(L)
-    except TypeError: # L est une liste
-        visualizeMany([L])
-
-
+def viz(L, modeXY=True):
+    visualizeMany(L, modeXY)
+    
 def compareIsochroneAndPseudoisochrone():
     processData()
     t1, t2 = 5, 10
     I, J = getPseudoisochrone(t1, t2)
     processData()
-    K = getIsochronePab(t1)
+    K = getIsochrone(t1)
     processData()
-    L = getIsochronePab(t2)
+    L = getIsochrone(t2)
     isochrones = [I, J, K, L]
     visualizeMany(isochrones)
     see()
     return isochrones
 
-def test(d1=default_time, d2=2*default_time, loc=dataset, debug=False):
+def test(d1=default_time, d2=2*default_time, loc=dataset, debugMode=False):
     print(" --- Testing function : getPseudoisochrone  with parameters : ")
     print("Dataset : ", loc)
     print("Destination time : ", d2)
     print("Halfway time : ", d1)
     if loc != dataset:
         processData(loc)
-    l = getPseudoisochrone(d1, d2, debug)
+    l = getPseudoisochrone(d1, d2, debug=debugMode)
     viz(l)
     see()
 
@@ -277,4 +313,9 @@ def see():
         os.system('firefox vis/vis.html') #Pour Firefox/Linux
 
 processData()
+
+def getResults(t):
+    t0 = time()
+    a = getIsochrone(t)
+    
 #visualize(getIsochronePab2(default_time))
