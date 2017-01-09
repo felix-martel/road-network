@@ -10,6 +10,7 @@ import math
 from operator import itemgetter
 import heapq
 import webbrowser as web
+import matplotlib.pyplot as plt
 
 t0 = time()
 
@@ -251,13 +252,13 @@ def exportPointList(I):
     return(pointList)
 
 
-def visualizeMany(L, modeXY=True):
+def visualizeMany(L, modeXY=True, filename='points'):
     """
         Each element L[i] of L is a list of vertices 
         Make sure your vis/vis.html file is up-to-date
     """
     I = L[0]
-    file = open('vis/points.js', 'w')
+    file = open('vis/'+filename+'.js', 'w')
     file.write('var plottedPoints = [\n')
     if modeXY:
         for xy in I:
@@ -343,9 +344,70 @@ def default(function):
     see()
     
 
-def isochrones(d):
+def isochrones(d, returnIsos=False):
     t0 = time()
     a = getIsochrone(d)
+    visualizeMany(a, filename='point_'+str(d))
     t = time() - t0
-    return d, len(a[0]), t
+    if returnIsos:
+        return d, len(a[0]), t , a[0]
+    else:
+        return d, len(a[0]), t
 
+def pseudoisochrones(t1, t2):
+    t0 = time()
+    a = getPseudoisochrone(t1, t2)
+    visualizeMany(a, filename='point_'+str(t2))
+    rt = time() - t0
+    return len(a[0]), rt
+
+def itereTestA(saveIsos=False):
+    X, Y, runtimes = [], [], []
+    print(" --- Running getIsochrone for different values of t1 --- ")
+    distances = [1, 2, 3, 5, 8, 10, 15, 18, 20, 25, 30, 40, 50, 60, 2*60, 3*60, 4*60, 5*60, 6*60, 7*60, 8*60]
+    t0 = time()
+    if saveIsos:
+        isos = []
+    for d in distances:
+        print("--\n t1 = ", d)
+        if saveIsos:
+            x, y, r, iso = isochrones(d, saveIsos)
+            isos.append(iso)
+        else:
+            x, y, r = isochrones(d)
+        print("result = ", y)
+        print("runtime = ", r)
+        X.append(x)
+        Y.append(y)
+        runtimes.append(r)
+        resetData()
+    print("\n\nTotal runtime : ", (time()-t0)/60)
+    plt.plot(X, Y)
+    if saveIsos:
+        visualizeMany(isos)
+        see()
+        return X, Y, runtimes, isos
+    return X, Y, runtimes
+
+def itereTestB():
+    X, Y, runtimes = [], [], []
+    ratios = [1.1, 1.5, 2, 3, 4]
+    t1 = 60
+    print(" --- Running getPseudoisochrone for different values of t2/t1 --- ")
+    t0 = time()
+    for ratio in ratios:
+        t2 = ratio * t1
+        print("--\nt1 = ", t1)
+        print("t2 = ", t2)
+        print("ratio = ", ratio)
+        y, r = pseudoisochrones(t1, t2)
+        print("result = ", y)
+        print("runtime = ", r)
+        X.append(x)
+        Y.append(y)
+        runtimes.append(r)
+        resetData()
+    print("\n\nTotal runtime : ", time()-t0)
+    plt.plot(X, Y)
+    return X, Y, runtimes
+        
