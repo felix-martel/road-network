@@ -117,36 +117,36 @@ def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
 
       iso = {startingPoint: 0}
       visitedVertices = {startingPoint: SELECTED}
-      currentVertex, currentDistance = getClosestElement(iso)
+      #currentVertex, currentDistance = getClosestElement(iso)
       
       while iso:
-              
-          for currentNeighbor, distanceNeighbor in G[currentVertex].items():
-              if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < iso[currentNeighbor])):
-                  iso[currentNeighbor] = currentDistance + distanceNeighbor
-                  visitedVertices[currentNeighbor] = SELECTED
-                  distance[currentNeighbor] = currentDistance + distanceNeighbor
-                  previousVertex[currentNeighbor] = currentVertex
-          
-          del iso[currentVertex]
-          visitedVertices[currentVertex] = VISITED
+          currentVertex, currentDistance = getClosestElement(iso)
           if currentDistance > d:
               x1, y1 = coordinates[previousVertex[currentVertex]]
               x2, y2 = coordinates[currentVertex]
-              u1 = d - distance[previousVertex[currentVertex]]
-              u2 = currentDistance - d
+              u1 = abs(d - distance[previousVertex[currentVertex]])
+              u2 = abs(currentDistance - d)
               t = u1 / (u1 + u2)
               print(t)
               resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
               if seeBarycenters:
                   baryXY.append((x1, y1))
                   baryXY.append((x2, y2))
+          else:
+              for currentNeighbor, distanceNeighbor in G[currentVertex].items():
+                  if (currentNeighbor not in visitedVertices) or ((visitedVertices[currentNeighbor] == SELECTED) and (currentDistance + distanceNeighbor < iso[currentNeighbor])):
+                      iso[currentNeighbor] = currentDistance + distanceNeighbor
+                      visitedVertices[currentNeighbor] = SELECTED
+                      distance[currentNeighbor] = currentDistance + distanceNeighbor
+                      previousVertex[currentNeighbor] = currentVertex
           
-          if iso:
-              currentVertex, currentDistance = getClosestElement(iso)
+          del iso[currentVertex]
+          visitedVertices[currentVertex] = VISITED
+          
+
       
       if seeBarycenters:
-          return [resultXY, seeBarycenters]
+          return [resultXY, baryXY]
       else:
           return [resultXY]
       
@@ -313,6 +313,12 @@ def see():
         os.system('firefox vis/vis.html') #Pour Firefox/Linux
 
 processData()
+
+def default(function):
+    a = function()
+    viz(a)
+    see()
+    
 
 def getResults(t):
     t0 = time()
