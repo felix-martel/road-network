@@ -28,12 +28,16 @@ demo = {
         'set': 'data/idf.in',
         'start': 680443050          # Boulevard de Sébastopol
     },
+    'fr': {
+        'set': 'data/france.in',
+        'start': 122935          # Boulevard de Sébastopol
+    },
     'maison': {
         'set': 'data/idf.in',
         'start': 2638124123         
     }
 }
-dataset = 'malta'
+dataset = 'fr'
 default_time = 5
 startingPoint = demo[dataset]['start'] # id du sommet de départ
 G = {}
@@ -127,7 +131,6 @@ def getIsochrone(d=default_time, output='xy', seeBarycenters=False):
               u1 = abs(d - distance[previousVertex[currentVertex]])
               u2 = abs(currentDistance - d)
               t = u1 / (u1 + u2)
-              print(t)
               resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
               if seeBarycenters:
                   baryXY.append((x1, y1))
@@ -205,7 +208,7 @@ def getPseudoisochrone(d1=default_time, d2=2*default_time, output='xy', debug=Fa
                   u1 = distanceFromStart - d1
                   u2 = d1 - distance[previousVertex[vertex]]
                   t = u1 / (u1 + u2)
-                  print(t)
+                  #print(t)
                   resultXY.append((t*x1+(1-t)*x2, t*y1+(1-t)*y2))
                   if seeBarycenters:
                       baryXY.append((x1, y1))
@@ -294,7 +297,17 @@ def compareIsochroneAndPseudoisochrone():
     see()
     return isochrones
 
-def test(d1=default_time, d2=2*default_time, loc=dataset, debugMode=False):
+def testA(d1=default_time, loc=dataset, debugMode=False):
+    print(" --- Testing function : getIsochrone  with parameters : ")
+    print("Dataset : ", loc)
+    print("Duration : ", d1)
+    if loc != dataset:
+        processData(loc)
+    l = getIsochrone(d1)
+    viz(l)
+    see()
+
+def testB(d1=default_time, d2=2*default_time, loc=dataset, debugMode=False):
     print(" --- Testing function : getPseudoisochrone  with parameters : ")
     print("Dataset : ", loc)
     print("Destination time : ", d2)
@@ -312,7 +325,7 @@ def see():
     else:
         os.system('firefox vis/vis.html') #Pour Firefox/Linux
 
-processData()
+#processData()
 
 def default(function):
     a = function()
@@ -320,8 +333,9 @@ def default(function):
     see()
     
 
-def getResults(t):
+def isochrones(d):
     t0 = time()
-    a = getIsochrone(t)
-    
-#visualize(getIsochronePab2(default_time))
+    a = getIsochrone(d)
+    t = time() - t0
+    return d, len(a[0]), t
+
